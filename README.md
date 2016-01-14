@@ -8,3 +8,6 @@ By using RtlWalkFrameChain to trace the call stack back into usermode my spam fi
 The current Visual Studio project only supports 64 bits Windows versions but it's fully compatible with 32 bits applications running on the WoW64 emulation layer.
 
 *Tested only on Windows 7 x64*
+
+*Screenshot showing the nice and clean output after filtering*
+![alt tag](https://raw.githubusercontent.com/Staatsgeheim/PsImageNotifyRoutineSpamFilter/master/SampleOutput.png)
