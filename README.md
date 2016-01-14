@@ -6,3 +6,5 @@ If you ever used this kernel callback I'm pretty sure you noticed that it genera
 By using RtlWalkFrameChain to trace the call stack back into usermode my spam filter will verify if the event was actually triggerd by the Windows PE loader instead of Shell32 or some random other software component effectively leaving you with only the real DLL, Driver or EXE image load events.
 
 The current Visual Studio project only supports 64 bits Windows versions but it's fully compatible with 32 bits applications running on the WoW64 emulation layer.
+
+*Tested only on Windows 7 x64*
