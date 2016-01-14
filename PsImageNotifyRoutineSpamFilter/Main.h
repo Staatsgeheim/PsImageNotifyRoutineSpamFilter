@@ -153,6 +153,7 @@ BOOLEAN CFORCEINLINE IsWoW64Process() {	return PsGetProcessWow64Process(PsGetCur
 
 BOOLEAN		IsSourceNtLoader();
 
+ULONG		VA2Offset(PVOID		 base,		ULONG_PTR	address);
 ULONG_PTR	GetProcAddress(PVOID base,		PCHAR		name);
 
 BOOLEAN		IsNtDll32(ULONG		 address,	PULONG		base);
