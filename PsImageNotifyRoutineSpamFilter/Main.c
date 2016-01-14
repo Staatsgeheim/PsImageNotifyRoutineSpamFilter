@@ -31,7 +31,6 @@
 #pragma alloc_text(PAGE, IsSourceNtLoader)
 #pragma alloc_text(PAGE, IsNtDll32)
 #pragma alloc_text(PAGE, IsNtDll64)
-#pragma alloc_text(PAGE, VA2Offset)
 #pragma alloc_text(PAGE, GetProcAddress)
 #pragma alloc_text(PAGE, PrintRealDllLoad)
 #endif
@@ -206,44 +205,6 @@ BOOLEAN IsNtDll64(ULONG_PTR address, PULONG_PTR base)
 		return TRUE;
 	}
 	return FALSE;
-}
-
-ULONG VA2Offset(PVOID base, ULONG_PTR address)
-{
-	PIMAGE_DOS_HEADER	dosHeader = (PIMAGE_DOS_HEADER)base;
-	PIMAGE_NT_HEADERS32 ntHeaders = NULL;
-
-	ASSERT(base != NULL);
-	if (base == NULL)
-		return 0;
-
-	__try
-	{
-		if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-			return 0;
-
-		ntHeaders = (PIMAGE_NT_HEADERS32)((PUCHAR)base + dosHeader->e_lfanew);
-
-		if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
-			return 0;
-
-		if (ntHeaders->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC ||
-			ntHeaders->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-		{
-			PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
-
-			for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
-			{
-				if (address >= section->VirtualAddress && address < (section->VirtualAddress + section->SizeOfRawData))
-				{
-					return (ULONG)((address - (section->VirtualAddress)) - (ULONG_PTR)base);
-				}
-				section++;
-			}
-		}
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) { }
-	return 0;
 }
 
 ULONG_PTR GetProcAddress(PVOID base, PCHAR name)
