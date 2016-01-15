@@ -60,11 +60,14 @@ BOOLEAN IsSourceNtLoader()
 
 		if (FramesFound <= FramesToSkip)
 		{
-			if (FramesFound == FramesToSkip)	// Process is initializing, log the first 2 or 3(WoW64) entries
-				return TRUE;
-			return FALSE;
-		}
-
+			if (FramesFound == FramesToSkip)	// Process is initializing, log the first 2 or 3(WoW64) entries.
+			{									// 1) Main binary								
+				return TRUE;					// 2) Ntdll64
+			}									// And optionally in case of WoW64 emulation
+			return FALSE;						// 3) Ntdll32
+		}										// During initialization RtlWalkFrameChain always returns only 1 frame so no need to verify if it's the Windows PE Loader
+												// Because of this the list entry checks in both IsNtDll32 and IsNtDll64 could be removed
+		
 		for (ULONG i = FramesToSkip; i < FramesToCapture + FramesToSkip; i++)
 		{
 			if (i >= FramesFound)
@@ -86,7 +89,7 @@ BOOLEAN IsSourceNtLoader()
 						return TRUE;
 					}
 				}
-				// Could be the WoW64 subsystem loading
+				// Could be the WoW64 subsystem loading or malicious DLL's getting injected/loaded
 				else if (IsNtDll64(Entry, &NtDllBase64))
 				{
 					if (Entry >= (ULONG_PTR) (NtDllBase64 + LdrLoadDllOffset64) &&
@@ -151,17 +154,11 @@ BOOLEAN IsNtDll32(ULONG address, PULONG base)
 	PPEB_LDR_DATA32			Ldr;
 	PLDR_DATA_TABLE_ENTRY32 Entry;
 	
-	Ldr = ((PPEB_LDR_DATA32)PsGetProcessWow64Process(PsGetCurrentProcess())->Ldr);
+	Ldr = ((PPEB_LDR_DATA32)PsGetCurrentProcessWow64Process()->Ldr);
 
 	if (!Ldr)		// This can happen while the WoW64 subsystem is still initializing
 		return FALSE;
 
-	if (IsListEmpty32((PLIST_ENTRY32)Ldr->InLoadOrderModuleList.Flink))	
-		return FALSE;
-
-	if (ListItemCount32((PLIST_ENTRY32)Ldr->InLoadOrderModuleList.Flink) == 1)
-		return FALSE;
-	
 	Entry = (PLDR_DATA_TABLE_ENTRY32)Ldr->InLoadOrderModuleList.Flink;	// Main exe
 	Entry = (PLDR_DATA_TABLE_ENTRY32)Entry->InLoadOrderLinks.Flink;		// Ntdll
 
@@ -186,12 +183,6 @@ BOOLEAN IsNtDll64(ULONG_PTR address, PULONG_PTR base)
 	
 	Ldr = ((PPEB_LDR_DATA64)PsGetProcessPeb(PsGetCurrentProcess())->Ldr);
 
-	if (IsListEmpty64((PLIST_ENTRY64)Ldr->InLoadOrderModuleList.Flink))
-		return FALSE;
-
-	if (ListItemCount64((PLIST_ENTRY64)Ldr->InLoadOrderModuleList.Flink) == 1)
-		return FALSE;
-
 	Entry = (PLDR_DATA_TABLE_ENTRY64)Ldr->InLoadOrderModuleList.Flink;	// Main exe
 	Entry = (PLDR_DATA_TABLE_ENTRY64)Entry->InLoadOrderLinks.Flink;		// Ntdll
 
@@ -207,6 +198,10 @@ BOOLEAN IsNtDll64(ULONG_PTR address, PULONG_PTR base)
 	return FALSE;
 }
 
+// Just in case you happen to notice the complete lack of ProbeForRead checks, every stack frame address item returned by 
+// RtlWalkFrameChain is fully validated and checked if it's safe to access before it will even return the value to the caller.
+// 
+// So it's pretty safe to asusume no additional checks are needed here.
 ULONG_PTR GetProcAddress(PVOID base, PCHAR name)
 {
 	PIMAGE_DOS_HEADER		dosHeader			= (PIMAGE_DOS_HEADER)base;

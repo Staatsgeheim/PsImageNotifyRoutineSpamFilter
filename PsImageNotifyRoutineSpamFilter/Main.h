@@ -143,13 +143,14 @@ VOID PrintRealDllLoad(HANDLE ProcessId, PUNICODE_STRING module);
 NTKERNELAPI PCHAR  NTAPI PsGetProcessImageFileName	(PEPROCESS process);
 NTKERNELAPI PPEB64 NTAPI PsGetProcessPeb			(PEPROCESS process);
 NTKERNELAPI PPEB32 NTAPI PsGetProcessWow64Process	(PEPROCESS process);
+NTKERNELAPI PPEB32 NTAPI PsGetCurrentProcessWow64Process();
 
 NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
 NTSTATUS DriverUnload(PDRIVER_OBJECT DriverObject);
 
 VOID LoadImageNotify(PUNICODE_STRING FullImageName, HANDLE ProcessId, PIMAGE_INFO ImageInfo);
 
-BOOLEAN CFORCEINLINE IsWoW64Process() {	return PsGetProcessWow64Process(PsGetCurrentProcess()) != NULL; }
+BOOLEAN CFORCEINLINE IsWoW64Process() { return PsGetCurrentProcessWow64Process() != NULL; }
 
 BOOLEAN		IsSourceNtLoader();
 
